@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: maffia-game-service
+  labels:
+    app: maffia-game
+spec:
+  type: ClusterIP
+  selector:
+    app: maffia-game
+  ports:
+    - name: http
+      port: 8098
+      targetPort: http
