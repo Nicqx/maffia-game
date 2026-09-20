@@ -960,8 +960,14 @@ api.post('/session/:code/close', async (req, res, next) => {
 });
 
 api.get('/healthz', async (_req, res) => {
-  res.json({ ok: true, redis: redis.isOpen, basePath: BASE_PATH });
+  if (!redis.isReady) {
+    return res.status(503).json({ ok: false, redis: false, basePath: BASE_PATH });
+  }
+  return res.json({ ok: true, redis: true, basePath: BASE_PATH });
 });
+
+app.get('/livez', (_req, res) => res.json({ ok: true }));
+if (BASE_PATH) app.get(`${BASE_PATH}/livez`, (_req, res) => res.json({ ok: true }));
 
 function sendIndex(_req, res) {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
