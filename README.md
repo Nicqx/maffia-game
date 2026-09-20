@@ -2,6 +2,39 @@
 
 Mobilbarát, böngészőből használható Maffia-játékvezető asszisztens.
 
+## NUC telepítés és frissítés
+
+Előfeltétel: Docker, Git, Bash, működő k3s, `redis-service` és ingress.
+
+```bash
+cd ~/codes/maffia-game
+git pull --ff-only
+KUBECTL='sudo k3s kubectl' ./update.sh --target nuc --dry-run
+KUBECTL='sudo k3s kubectl' ./update.sh --target nuc
+```
+
+Erőforrások: `maffia-game` Deployment, `maffia-game-service:8098`; publikus útvonal `/maffia/`. Manifestmentések: `~/.local/state/nicqx-apps/nuc/maffia-game/`.
+
+```bash
+sudo k3s kubectl get pod,service -n default -l app=maffia-game -o wide
+sudo k3s kubectl logs deployment/maffia-game -n default --tail=50
+curl -fsS https://pmqxyz.hopto.org/maffia/api/healthz
+```
+
+## Migráció, rollback és eltávolítás
+
+A konténer állapotmentes; a sessionök a közös Redisben vannak (6 órás TTL). Előbb a `redis` repo eljárásával migráld az adatokat, utána futtasd az update-et. Külön PVC nincs.
+
+```bash
+sudo k3s kubectl scale deployment/maffia-game -n default --replicas=0
+sudo k3s kubectl scale deployment/maffia-game -n default --replicas=1
+sudo k3s kubectl apply -f /teljes/ut/korabbi-manifest.yaml
+sudo k3s kubectl rollout status deployment/maffia-game -n default --timeout=180s
+sudo k3s kubectl delete deployment/maffia-game service/maffia-game-service -n default
+```
+
+Az eltávolítás nem töröl Redis-adatot vagy ingress-szabályt.
+
 ## Funkciók
 
 - automatikus 5 számjegyű session kód
